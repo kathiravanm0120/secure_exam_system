@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'SETTER' | 'REVIEWER' | 'CANDIDATE' | 'EXAM_OFFICER';
+export type Role = 'ADMIN' | 'SETTER' | 'REVIEWER' | 'CANDIDATE' | 'EXAM_OFFICER' | 'AUTHOR' | 'SECURITY_AUDITOR';
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 export type QuestionStatus = 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'RETIRED_EXPOSURE' | 'COMPROMISED';
 export type ExposureStatus = 'ACTIVE' | 'WARNING' | 'HIGH_EXPOSURE' | 'COMPROMISED' | 'RETIRED_EXPOSURE';
@@ -6,6 +6,12 @@ export type ExamStatus = 'SCHEDULED' | 'RELEASED' | 'COMPLETED' | 'CANCELLED';
 export type SessionStatus = 'ACTIVE' | 'COMPLETED' | 'TERMINATED';
 export type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type AlertStatus = 'OPEN' | 'RESOLVED' | 'DISMISSED';
+
+export interface ExposureOut {
+  question_id: number;
+  exposure_count: number;
+  exposure_status: ExposureStatus;
+}
 
 export interface User {
   id: number;
