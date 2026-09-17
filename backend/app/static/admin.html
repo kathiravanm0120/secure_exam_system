@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Secure Exam — Admin Dashboard</title>
+  <style>
+    :root{--bg:#0b1020;--panel:#111831;--panel2:#0f1529;--text:#eaf0ff;--muted:#94a0bb;--line:#253050;--ok:#31d49b;--warn:#ffcc66;--bad:#ff6b7a;--accent:#7c9cff}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1400px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.title h1{margin:0 0 6px;font-size:28px}.title p{margin:0;color:var(--muted)}
+    button{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:10px 14px;cursor:pointer}.primary{background:var(--accent);border-color:var(--accent);color:#081022;font-weight:700}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.metric .k{font-size:13px;color:var(--muted)}.metric .v{font-size:30px;font-weight:800;margin-top:5px}.metric .s{font-size:12px;color:var(--muted);margin-top:5px}
+    .cols{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}.section-title{font-weight:700;margin-bottom:14px}.row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.muted{color:var(--muted)}
+    .pill{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid var(--line)}.good{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+    .bar{height:9px;background:#0a0f1e;border-radius:8px;overflow:hidden;border:1px solid var(--line)}.fill{height:100%;background:var(--accent)}
+    table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}
+    .wide{margin-top:16px}.login{max-width:420px;margin:12vh auto}.login h2{margin-top:0}.field{display:grid;gap:7px;margin:12px 0}.field label{font-size:13px;color:var(--muted)}input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}.hidden{display:none}.error{color:var(--bad);font-size:13px;margin-top:10px;min-height:18px}
+    @media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}}@media(max-width:600px){.grid{grid-template-columns:1fr}.wrap{padding:16px}}
+  </style>
+</head>
+<body>
+<div id="login" class="card login">
+  <h2>Admin Dashboard</h2><p class="muted">Sign in with an ADMIN account.</p>
+  <div class="field"><label>Email</label><input id="email" type="email" placeholder="admin@example.com"></div>
+  <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••"></div>
+  <button class="primary" style="width:100%" onclick="login()">Sign in</button><div id="loginError" class="error"></div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <div class="top"><div class="title"><h1>Exam Security Dashboard</h1><p>Operational view of questions, exams, exposure and security events.</p></div><div><button onclick="loadDashboard()">Refresh</button> <button onclick="logout()">Logout</button></div></div>
+  <div class="grid" id="metrics"></div>
+  <div class="cols">
+    <div class="card"><div class="section-title">Blockchain integrity</div><div id="chainStatus"></div><div id="chainRecent"></div></div>
+    <div class="card"><div class="section-title">Question status</div><div id="questionStatus"></div></div>
+  </div>
+  <div class="cols wide">
+    <div class="card"><div class="section-title">Highest item exposure</div><div id="exposure"></div></div>
+    <div class="card"><div class="section-title">Recent security alerts</div><div id="alerts"></div></div>
+  </div>
+  <div class="card wide"><div class="section-title">System distributions</div><div id="distributions"></div></div>
+</div>
+<script>
+let token = localStorage.getItem('secureExamAdminToken');
+function showApp(){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadDashboard()}
+async function login(){
+  const email=document.getElementById('email').value.trim(), password=document.getElementById('password').value;
+  const r=await fetch('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  const data=await r.json(); if(!r.ok){document.getElementById('loginError').textContent=data.detail||'Login failed';return}
+  token=data.access_token; localStorage.setItem('secureExamAdminToken',token); const check=await api('/dashboard/summary');
+  if(check){document.getElementById('loginError').textContent='';showApp()} else {localStorage.removeItem('secureExamAdminToken');token=null;document.getElementById('loginError').textContent='Account is not an ADMIN.'}
+}
+function logout(){localStorage.removeItem('secureExamAdminToken');token=null;location.reload()}
+async function api(url){const r=await fetch(url,{headers:{Authorization:'Bearer '+token}}); if(r.status===401||r.status===403){logout();return null} if(!r.ok)throw new Error('Request failed');return r.json()}
+function dist(obj){const entries=Object.entries(obj||{}); if(!entries.length)return '<div class="muted">No data</div>'; const max=Math.max(...entries.map(x=>x[1]),1); return entries.map(([k,v])=>`<div class="row"><div style="width:30%">${k}</div><div style="flex:1"><div class="bar"><div class="fill" style="width:${(v/max)*100}%"></div></div></div><div style="width:60px;text-align:right">${v}</div></div>`).join('')}
+async function loadDashboard(){const d=await api('/dashboard/summary');if(!d)return;
+  const t=d.totals; document.getElementById('metrics').innerHTML=[['Users',t.users,'Registered accounts'],['Questions',t.questions,`${t.approved_questions} approved`],['Exposed items',t.exposed_questions,'Questions seen at least once'],['Open alerts',t.open_alerts,'Requires investigation']].map(x=>`<div class="card metric"><div class="k">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('');
+  const chain=d.chain.verification; document.getElementById('chainStatus').innerHTML=`<div class="row"><div>Status</div><div class="pill ${chain.valid?'good':'bad'}">${chain.valid?'VALID':'INVALID'}</div></div><div class="row"><div class="muted">Blocks</div><div>${chain.blocks??0}</div></div><div class="row"><div class="muted">Last hash</div><div style="font-family:monospace;font-size:11px">${chain.last_hash||'—'}</div></div>`;
+  document.getElementById('chainRecent').innerHTML='<div class="section-title" style="margin-top:16px">Recent events</div>'+d.chain.recent.map(b=>`<div class="row"><div><b>${b.event}</b><div class="muted">#${b.index}</div></div><div class="muted">${new Date(b.timestamp).toLocaleString()}</div></div>`).join('');
+  document.getElementById('questionStatus').innerHTML=dist(d.question_status);
+  document.getElementById('exposure').innerHTML=d.exposure_ranking.length?`<table><thead><tr><th>ID</th><th>Topic</th><th>Difficulty</th><th>Exposures</th><th>Status</th></tr></thead><tbody>${d.exposure_ranking.map(q=>`<tr><td>Q${q.id}</td><td>${q.topic}</td><td>${q.difficulty}</td><td>${q.exposure_count}</td><td><span class="pill ${q.exposure_status==='ACTIVE'?'good':'warn'}">${q.exposure_status}</span></td></tr>`).join('')}</tbody></table>`:'<div class="muted">No questions yet.</div>';
+  document.getElementById('alerts').innerHTML=d.recent_alerts.length?d.recent_alerts.map(a=>`<div class="row"><div><b>Alert #${a.id}</b><div class="muted">${a.reasons.join(', ')}</div></div><div style="text-align:right"><div class="pill ${a.severity==='CRITICAL'?'bad':a.severity==='HIGH'?'warn':'good'}">${a.severity} · ${a.risk_score}</div><div class="muted">${new Date(a.created_at).toLocaleString()}</div></div></div>`).join(''):'<div class="muted">No alerts.</div>';
+  document.getElementById('distributions').innerHTML='<div class="cols"><div><div class="section-title">Users by role</div>'+dist(d.role_counts)+'</div><div><div class="section-title">Exams / sessions / alerts</div>'+dist(d.exam_status)+'<br>'+dist(d.session_status)+'<br>'+dist(d.alert_status)+'</div></div>';
+}
+if(token)showApp();
+</script>
+</body></html>

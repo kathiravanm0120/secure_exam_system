@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Secure Exam System — Security Operations & CBT Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0f19;--surface:#131b2e;--surface2:#1a243b;--surface3:#222f4c;
+      --text:#f1f5f9;--muted:#94a3b8;--line:#2e3c5a;
+      --accent:#4f46e5;--accent-hover:#4338ca;--accent-light:rgba(79,70,229,0.15);
+      --good:#10b981;--good-bg:rgba(16,185,129,0.15);
+      --warn:#f59e0b;--warn-bg:rgba(245,158,11,0.15);
+      --bad:#ef4444;--bad-bg:rgba(239,68,68,0.15);
+      --purple:#8b5cf6;--purple-bg:rgba(139,92,246,0.15);
+      --shadow:0 10px 30px rgba(0,0,0,0.35);--radius:16px;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:'Inter',ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+    button,input,select,textarea{font:inherit} button{cursor:pointer;border:0;transition:all 0.15s ease} .hidden{display:none!important}
+    
+    /* Layout */
+    .layout{min-height:100vh;display:grid;grid-template-columns:260px 1fr}
+    .sidebar{background:#070a12;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:24px}
+    .brand{display:flex;align-items:center;gap:12px;padding:4px 8px 16px;border-bottom:1px solid var(--line)}
+    .brand-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;display:grid;place-items:center;font-weight:900;font-size:18px;box-shadow:0 4px 14px rgba(79,70,229,0.4)}
+    .brand h1{font-size:16px;margin:0;font-weight:800;letter-spacing:-0.02em} .brand span{font-size:11px;color:var(--muted);font-weight:500}
+    .nav{display:grid;gap:6px}
+    .nav button{background:transparent;color:var(--muted);text-align:left;padding:12px 14px;border-radius:12px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600}
+    .nav button:hover{background:var(--surface);color:var(--text)}
+    .nav button.active{background:var(--accent-light);color:#818cf8;border:1px solid rgba(129,140,248,0.3)}
+    .side-note{margin-top:auto;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:11px;line-height:1.5;color:var(--muted)}
+    
+    main{padding:28px;min-width:0;overflow-y:auto}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:24px}
+    .topbar h2{margin:0;font-size:26px;font-weight:800;letter-spacing:-0.02em} .topbar p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .top-actions{display:flex;align-items:center;gap:12px}
+    .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px}
+    .btn{background:var(--surface);border:1px solid var(--line);padding:10px 16px;border-radius:11px;color:var(--text);font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+    .btn:hover{background:var(--surface2);border-color:#475569}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,0.3)}
+    .btn.primary:hover{background:var(--accent-hover)}
+    .btn.good{background:var(--good-bg);border-color:rgba(16,185,129,0.4);color:var(--good)}
+    .btn.good:hover{background:rgba(16,185,129,0.25)}
+    .btn.bad{background:var(--bad-bg);border-color:rgba(239,68,68,0.4);color:var(--bad)}
+    .btn.bad:hover{background:rgba(239,68,68,0.25)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    
+    .view{display:none}.view.active{display:block}
+    .grid{display:grid;gap:18px}
+    .cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .two{grid-template-columns:1.3fr 1fr}
+    .three{grid-template-columns:repeat(3,1fr)}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+    .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+    .metric{font-size:32px;font-weight:900;margin:6px 0;letter-spacing:-0.03em}
+    .small{font-size:12px;color:var(--muted)}
+    .section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .section-title h3{margin:0;font-size:16px;font-weight:700}
+    
+    .status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:11px;font-weight:700}
+    .status.good{color:var(--good);background:var(--good-bg);border-color:rgba(16,185,129,0.3)}
+    .status.warn{color:var(--warn);background:var(--warn-bg);border-color:rgba(245,158,11,0.3)}
+    .status.bad{color:var(--bad);background:var(--bad-bg);border-color:rgba(239,68,68,0.3)}
+    .status.purple{color:#a78bfa;background:var(--purple-bg);border-color:rgba(139,92,246,0.3)}
+    
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)}
+    th{color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+    tr:last-child td{border-bottom:0}
+    tr:hover td{background:rgba(255,255,255,0.02)}
+    .mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:#a5b4fc}
+    
+    /* Forms */
+    .form{display:grid;gap:14px}
+    .field{display:grid;gap:6px}
+    .field label{font-size:12px;color:var(--muted);font-weight:600}
+    .field input,.field select,.field textarea{width:100%;padding:11px 14px;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:11px;outline:none;font-size:13px}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light)}
+    .field textarea{min-height:100px;resize:vertical}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    
+    .empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;font-size:13px}
+    .notice{padding:14px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);color:#94a3b8;font-size:12px;line-height:1.6}
+    .toast{position:fixed;right:24px;bottom:24px;background:#1e293b;border:1px solid var(--line);color:#fff;padding:14px 18px;border-radius:14px;box-shadow:var(--shadow);font-size:13px;opacity:0;transform:translateY(10px);transition:.25s ease;z-index:999;font-weight:600}
+    .toast.show{opacity:1;transform:translateY(0)}
+    
+    /* Login Screen */
+    .login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top right,#1e1b4b 0%,#0b0f19 60%)}
+    .login-card{width:min(440px,100%);background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:36px}
+    .login-card h2{margin:0 0 6px;font-size:28px;font-weight:800} .login-card p{margin:0 0 24px;color:var(--muted);font-size:14px}
+    .logo-line{display:flex;gap:14px;align-items:center;margin-bottom:28px}
+    .logo{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 4px 16px rgba(79,70,229,0.4)}
+    .error{min-height:20px;color:var(--bad);font-size:13px;margin-top:10px;font-weight:600}
+
+    /* Modal / Drawer */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:1000;padding:20px}
+    .modal-card{width:min(700px,100%);max-height:85vh;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:var(--shadow)}
+    
+    /* Timeline */
+    .timeline{display:grid;gap:16px;position:relative;margin-top:16px;padding-left:20px}
+    .timeline::before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line)}
+    .timeline-item{position:relative;padding:12px 16px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
+    .timeline-item::before{content:'';position:absolute;left:-20px;top:18px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--surface)}
+    .timeline-title{font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+    
+    /* CBT Screen */
+    .cbt-container{display:grid;grid-template-columns:1fr 280px;gap:20px}
+    .q-box{background:var(--surface2);border:1px solid var(--line);border-radius:16px;padding:24px}
+    .q-nav-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}
+    .q-nav-btn{padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-weight:700;text-align:center}
+    .q-nav-btn.active{border-color:var(--accent);background:var(--accent-light);color:#818cf8}
+    .q-nav-btn.answered{background:var(--good-bg);border-color:rgba(16,185,129,0.4);color:var(--good)}
+    
+    @media(max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{display:none}.cards{grid-template-columns:repeat(2,1fr)}.two,.three{grid-template-columns:1fr}.cbt-container{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="logo-line">
+      <div class="logo">SE</div>
+      <div><strong style="font-size:17px;display:block">Secure Exam Control</strong><div class="small">End-to-End CBT Integrity System</div></div>
+    </div>
+    <h2>Sign in</h2>
+    <p>Access your role-specific examination workspace.</p>
+    <form id="loginForm" class="form">
+      <div class="field"><label>Email address</label><input id="email" type="email" value="admin@example.com" required></div>
+      <div class="field"><label>Password</label><input id="password" type="password" value="password123" required></div>
+      <button class="btn primary" type="submit" style="width:100%;justify-content:center;padding:12px">Sign in to platform</button>
+    </form>
+    <div id="loginError" class="error"></div>
+    <div class="notice" style="margin-top:20px">
+      <strong>Role Credentials (Demo):</strong><br>
+      Admin: <code>admin@example.com</code><br>
+      Setter: <code>setter_a@example.com</code><br>
+      Reviewer: <code>reviewer_a@example.com</code><br>
+      Candidate: <code>candidate_a@example.com</code>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="app" class="layout hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">SE</div>
+      <div><h1>Secure Exam</h1><span>Integrity Operations</span></div>
+    </div>
+    <div id="nav" class="nav"></div>
+    <div class="side-note">
+      <strong>Zero-Trust Architecture</strong><br>
+      Questions are encrypted with AES-256-GCM + RSA-OAEP envelope encryption. Audit events are immutably appended to the blockchain ledger.
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Overview</h2>
+        <p id="pageSubtitle">Security operations at a glance.</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn" onclick="refreshCurrent()">↺ Refresh</button>
+        <div id="roleBadge" class="status good">ADMIN</div>
+        <div id="avatar" class="avatar">A</div>
+        <button class="btn bad" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <section id="viewOverview" class="view active"></section>
+    <section id="viewQuestions" class="view"></section>
+    <section id="viewCreate" class="view"></section>
+    <section id="viewReview" class="view"></section>
+    <section id="viewExam" class="view"></section>
+    <section id="viewSecurity" class="view"></section>
+    <section id="viewIdentity" class="view"></section>
+    <section id="viewInvestigation" class="view"></section>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div id="modalContainer" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="section-title">
+      <h3 id="modalTitle">Modal Title</h3>
+      <button class="btn" onclick="closeModal()">✕ Close</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const state = {
+  token: localStorage.getItem('secureExamToken'),
+  role: null,
+  userId: null,
+  currentView: 'Overview',
+  examSession: null,
+  answers: {},
+  currentQuestionPos: 1,
+  totalQuestions: 0,
+};
+
+const $ = id => document.getElementById(id);
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(window.__toast); window.__toast = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function jwtPayload(tok) {
+  try { return JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); }
+  catch { return {}; }
+}
+
+async function api(url, options = {}) {
+  const headers = { ...(options.headers || {}), Authorization: 'Bearer ' + state.token };
+  if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  const r = await fetch(url, { ...options, headers });
+  const text = await r.text();
+  let data = {}; try { data = text ? JSON.parse(text) : {}; } catch { data = { detail: text }; }
+  if (!r.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function badgeStatus(v) {
+  const cls = ['ACTIVE', 'APPROVED', 'RELEASED', 'VALID', 'PASS', 'VERIFIED'].includes(v) ? 'good' :
+              ['REJECTED', 'INVALID', 'BLOCKED', 'COMPROMISED', 'CRITICAL'].includes(v) ? 'bad' : 'warn';
+  return `<span class="status ${cls}">${esc(v)}</span>`;
+}
+
+function setView(name) {
+  state.currentView = name;
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  $('view' + name)?.classList.add('active');
+  const meta = {
+    Overview: ['Security Dashboard', 'Comprehensive operational metrics and chain integrity.'],
+    Questions: ['Question Bank & Custody', 'Manage encrypted question pool and trace complete lifecycle.'],
+    Create: ['Create Question', 'Submit individual questions into envelope-encrypted storage.'],
+    Review: ['Reviewer Workspace', 'Review assigned questions independently without full paper visibility.'],
+    Exam: ['Exam Management & CBT', 'Configure blueprints, paper validation, dual officer release, and candidate CBT.'],
+    Security: ['Security Operations', 'Monitor behavior risk engine, anomaly alerts, and blockchain ledger.'],
+    Identity: ['Identity & Centres', 'Register centres, bind CBT devices, and verify candidate identity.'],
+    Investigation: ['Leak Investigation Module', 'Perform deterministic cryptographic matching and text leak analysis.']
+  }[name];
+  if (meta) { $('pageTitle').textContent = meta[0]; $('pageSubtitle').textContent = meta[1]; }
+}
+
+function buildNav() {
+  let items = [['Overview', '⌂']];
+  if (state.role === 'SETTER' || state.role === 'ADMIN') items.push(['Questions', '▤'], ['Create', '＋']);
+  if (state.role === 'REVIEWER' || state.role === 'ADMIN') items.push(['Review', '✓']);
+  if (['ADMIN', 'CANDIDATE', 'EXAM_OFFICER'].includes(state.role)) items.push(['Exam', '◈']);
+  if (state.role === 'ADMIN' || state.role === 'EXAM_OFFICER') items.push(['Investigation', '🔍']);
+  if (state.role === 'ADMIN') items.push(['Security', '⚑'], ['Identity', '⌁']);
+
+  $('nav').innerHTML = items.map(([n, icon]) => `<button onclick="openView('${n}')" id="nav${n}"><span>${icon}</span>${n}</button>`).join('');
+  openView('Overview');
+}
+
+function openView(name) {
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.id === 'nav' + name));
+  setView(name);
+  refreshCurrent();
+}
+
+async function refreshCurrent() {
+  try {
+    if (state.currentView === 'Overview') await renderOverview();
+    if (state.currentView === 'Questions') await renderQuestions();
+    if (state.currentView === 'Create') renderCreate();
+    if (state.currentView === 'Review') await renderReview();
+    if (state.currentView === 'Exam') await renderExam();
+    if (state.currentView === 'Security') await renderSecurity();
+    if (state.currentView === 'Identity') await renderIdentity();
+    if (state.currentView === 'Investigation') renderInvestigation();
+  } catch (e) { toast(e.message); }
+}
+
+async function login(e) {
+  e.preventDefault(); $('loginError').textContent = '';
+  try {
+    const d = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: $('email').value, password: $('password').value }) });
+    state.token = d.access_token;
+    localStorage.setItem('secureExamToken', state.token);
+    const p = jwtPayload(state.token);
+    state.role = p.role; state.userId = p.sub;
+    $('loginScreen').classList.add('hidden'); $('app').classList.remove('hidden');
+    $('roleBadge').textContent = state.role; $('avatar').textContent = state.role[0];
+    buildNav();
+    toast('Authenticated as ' + state.role);
+  } catch (e) { $('loginError').textContent = e.message; }
+}
+
+function logout() { localStorage.removeItem('secureExamToken'); location.reload(); }
+$('loginForm').addEventListener('submit', login);
+
+function openModal(title, contentHtml) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = contentHtml;
+  $('modalContainer').classList.remove('hidden');
+}
+function closeModal() { $('modalContainer').classList.add('hidden'); }
+
+/* 1. OVERVIEW SCREEN */
+async function renderOverview() {
+  const root = $('viewOverview');
+  if (state.role === 'ADMIN') {
+    const d = await api('/dashboard/summary'); const t = d.totals; const chain = d.chain.verification;
+    root.innerHTML = `
+      <div class="grid cards">
+        <div class="card"><div class="eyebrow">Questions</div><div class="metric">${t.questions}</div><div class="small">${t.approved_questions} approved pool</div></div>
+        <div class="card"><div class="eyebrow">Active CBT Sessions</div><div class="metric">${t.active_sessions}</div><div class="small">Bound candidate sessions</div></div>
+        <div class="card"><div class="eyebrow">Security Alerts</div><div class="metric" style="color:${t.open_alerts?'var(--bad)':'var(--good)'}">${t.open_alerts}</div><div class="small">Requires investigation</div></div>
+        <div class="card"><div class="eyebrow">Ledger Status</div><div class="metric" style="color:${chain.valid?'var(--good)':'var(--bad)'}">${chain.valid ? 'VALID' : 'INVALID'}</div><div class="small">${chain.blocks ?? 0} blocks verified</div></div>
+      </div>
+      <div class="grid two" style="margin-top:20px">
+        <div class="card">
+          <div class="section-title"><h3>Highest Item Exposure</h3><span class="small">Exposure Tracking</span></div>
+          ${d.exposure_ranking.length ? `<table><thead><tr><th>ID</th><th>Topic</th><th>Difficulty</th><th>Exposure Count</th><th>Status</th></tr></thead><tbody>${d.exposure_ranking.map(q => `<tr><td><b>Q${q.id}</b></td><td>${esc(q.topic)}</td><td>${esc(q.difficulty)}</td><td>${q.exposure_count}</td><td>${badgeStatus(q.exposure_status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No exposure data recorded yet.</div>'}
+        </div>
+        <div class="card">
+          <div class="section-title"><h3>Recent Security Alerts</h3>${badgeStatus(t.open_alerts ? 'OPEN ALERTS' : 'CLEAN')}</div>
+          ${d.recent_alerts.length ? d.recent_alerts.slice(0, 5).map(a => `
+            <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+              <div style="display:flex;justify-content:space-between"><strong>Alert #${a.id}</strong>${badgeStatus(a.severity)}</div>
+              <div class="small" style="margin-top:4px">Risk Score: ${a.risk_score} · Candidate: ${a.candidate_id ?? 'N/A'}</div>
+              <div class="small" style="color:#cbd5e1;margin-top:2px">${esc(a.reasons.join(', '))}</div>
+            </div>`).join('') : '<div class="empty">No active security alerts.</div>'}
+        </div>
+      </div>`;
+  } else {
+    const qs = await api('/questions/my');
+    root.innerHTML = `
+      <div class="grid cards">
+        <div class="card"><div class="eyebrow">Active Role</div><div class="metric" style="font-size:22px">${state.role}</div><div class="small">Least-privilege isolation</div></div>
+        <div class="card"><div class="eyebrow">Accessible Questions</div><div class="metric">${qs.length}</div><div class="small">Scoped to user</div></div>
+      </div>
+      <div class="card" style="margin-top:20px">
+        <div class="section-title"><h3>Your Accessible Questions</h3><button class="btn" onclick="openView('Questions')">View all</button></div>
+        ${qs.length ? `<table><thead><tr><th>ID</th><th>Subject</th><th>Topic</th><th>Difficulty</th><th>Status</th></tr></thead><tbody>${qs.slice(-6).reverse().map(q => `<tr><td><b>Q${q.id}</b></td><td>${esc(q.subject)}</td><td>${esc(q.topic)}</td><td>${esc(q.difficulty)}</td><td>${badgeStatus(q.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No questions assigned.</div>'}
+      </div>`;
+  }
+}
+
+/* 2. QUESTIONS & LIFECYCLE */
+async function renderQuestions() {
+  const root = $('viewQuestions');
+  const qs = await api('/questions/my');
+  root.innerHTML = `
+    <div class="card">
+      <div class="section-title">
+        <h3>Encrypted Question Bank</h3>
+        <button class="btn primary" onclick="openView('Create')">＋ New Question</button>
+      </div>
+      ${qs.length ? `<table><thead><tr><th>ID</th><th>Subject</th><th>Topic</th><th>Difficulty</th><th>Status</th><th>Integrity Hash</th><th>Action</th></tr></thead><tbody>${qs.map(q => `
+        <tr>
+          <td><b>Q${q.id}</b></td>
+          <td>${esc(q.subject)}</td>
+          <td>${esc(q.topic)}</td>
+          <td>${esc(q.difficulty)}</td>
+          <td>${badgeStatus(q.status)}</td>
+          <td class="mono">${q.content_hash.slice(0, 16)}…</td>
+          <td>
+            <button class="btn" onclick="viewLifecycle(${q.id})">Visual Timeline</button>
+          </td>
+        </tr>`).join('')}</tbody></table>` : '<div class="empty">No questions available in your scope.</div>'}
+    </div>`;
+}
+
+async function viewLifecycle(qid) {
+  try {
+    const data = await api('/investigation/questions/' + qid + '/lifecycle');
+    let html = `
+      <div style="margin-bottom:16px">
+        <strong>Question #${qid}</strong> · Status: ${badgeStatus(data.current_status)} · Exposure: <b>${data.exposure_count}</b>
+      </div>
+      <div class="timeline">
+        ${data.timeline.map(t => `
+          <div class="timeline-item">
+            <div class="timeline-title">
+              <span>${esc(t.stage)}</span>
+              <span class="small">${t.timestamp ? new Date(t.timestamp).toLocaleString() : 'N/A'}</span>
+            </div>
+            <div class="small" style="margin-top:4px">Actor: <b>${esc(t.actor)}</b> (${esc(t.actor_role)}) · Source: <i>${esc(t.source)}</i></div>
+            <div class="small" style="color:#cbd5e1;margin-top:2px">${esc(t.details)}</div>
+            <div class="mono" style="margin-top:4px">Ref: ${esc(t.blockchain_ref)}</div>
+          </div>`).join('')}
+      </div>`;
+    openModal('Question Chain of Custody Timeline (Q' + qid + ')', html);
+  } catch (e) { toast(e.message); }
+}
+
+/* 3. CREATE QUESTION */
+function renderCreate() {
+  const root = $('viewCreate');
+  root.innerHTML = `
+    <div class="grid two">
+      <div class="card">
+        <div class="section-title"><h3>Create Question</h3><span class="status good">AES-256-GCM + RSA-OAEP</span></div>
+        <form id="qform" class="form">
+          <div class="field"><label>Question Text</label><textarea id="qcontent" placeholder="Enter the examination question text..." required></textarea></div>
+          <div class="field"><label>Correct Answer</label><input id="qanswer" placeholder="Enter correct answer" required></div>
+          <div class="form-row">
+            <div class="field"><label>Subject</label><input id="qsubject" value="Computer Science" required></div>
+            <div class="field"><label>Topic</label><input id="qtopic" placeholder="Data Structures" required></div>
+          </div>
+          <div class="field"><label>Difficulty</label><select id="qdifficulty"><option>EASY</option><option selected>MEDIUM</option><option>HARD</option></select></div>
+          <button class="btn primary" type="submit">Encrypt & Submit Question</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Security Controls</h3>
+        <p class="small" style="line-height:1.7">Individual question setters operate at single-question scope and cannot access the final examination paper. Content is immediately envelope-encrypted and written to the audit ledger.</p>
+        <div class="notice">Plaintext question content is never stored unencrypted in storage.</div>
+      </div>
+    </div>`;
+
+  $('qform').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      await api('/questions', { method: 'POST', body: JSON.stringify({ content: $('qcontent').value, answer: $('qanswer').value, subject: $('qsubject').value, topic: $('qtopic').value, difficulty: $('qdifficulty').value }) });
+      toast('Question encrypted & submitted');
+      openView('Questions');
+    } catch (err) { toast(err.message); }
+  };
+}
+
+/* 4. REVIEWER WORKSPACE */
+async function renderReview() {
+  const root = $('viewReview');
+  const qs = await api('/questions/my');
+  const pending = qs.filter(q => q.status === 'IN_REVIEW' || q.status === 'SUBMITTED');
+  root.innerHTML = `
+    <div class="card">
+      <div class="section-title"><h3>Assigned Review Queue</h3><span class="small">${pending.length} pending reviews</span></div>
+      ${pending.length ? pending.map(q => `
+        <div class="card" style="padding:16px;margin-top:12px;background:var(--surface2)">
+          <div style="display:flex;justify-content:space-between">
+            <div><strong>Q${q.id}</strong> · ${esc(q.subject)} / ${esc(q.topic)}</div>
+            ${badgeStatus(q.status)}
+          </div>
+          <div style="margin:12px 0;line-height:1.6">${esc(q.content)}</div>
+          <div class="small">Difficulty: <b>${esc(q.difficulty)}</b> · Hash: <span class="mono">${q.content_hash.slice(0, 16)}…</span></div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn good" onclick="submitReview(${q.id},'APPROVE')">Approve Question</button>
+            <button class="btn bad" onclick="submitReview(${q.id},'REJECT')">Reject Question</button>
+          </div>
+        </div>`).join('') : '<div class="empty">No questions currently assigned for review.</div>'}
+    </div>`;
+}
+
+async function submitReview(id, decision) {
+  const comments = decision === 'REJECT' ? prompt('Reason for rejection?') || 'Rejected' : 'Approved';
+  try {
+    await api('/questions/' + id + '/review', { method: 'POST', body: JSON.stringify({ decision, comments }) });
+    toast('Review decision recorded');
+    renderReview();
+  } catch (e) { toast(e.message); }
+}
+
+/* 5. EXAM & CBT WORKSPACE */
+async function renderExam() {
+  const root = $('viewExam');
+  root.innerHTML = `
+    <div class="grid two">
+      <div class="card">
+        <div class="section-title"><h3>Exam Controls & Validation</h3></div>
+        <div class="form">
+          <div class="field"><label>Exam ID</label><input id="examIdInput" type="number" value="1"></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn primary" onclick="runPaperValidation()">Run Pre-Exam AI Validation</button>
+            <button class="btn good" onclick="approveRelease()">Approve Release (Officer)</button>
+            <button class="btn purple" onclick="releaseExam()">Release Exam (Admin)</button>
+          </div>
+          <div id="validationResult" class="notice hidden" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><h3>Candidate CBT Session</h3></div>
+        <form id="startForm" class="form">
+          <div class="field"><label>Exam ID</label><input id="cbtExamId" type="number" value="1" required></div>
+          <div class="field"><label>Centre ID</label><input id="cbtCentreId" type="number" value="1" required></div>
+          <div class="field"><label>Device Code</label><input id="cbtDeviceId" value="DEV-0001" required></div>
+          <div class="field"><label>Device Token</label><input id="cbtDeviceToken" value="SECURE_DEV_TOKEN_0001" required></div>
+          <button class="btn primary" type="submit">Start Candidate CBT Exam</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="cbtExamArea" class="card hidden" style="margin-top:20px">
+      <div class="section-title">
+        <h3 id="cbtTitle">Candidate Examination</h3>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div id="connectionStatus" class="status good">CONNECTED</div>
+          <div id="timer" class="status warn" style="font-size:14px;font-family:monospace">01:00:00</div>
+          <button class="btn bad" onclick="finishCBT()">Submit & Finish Exam</button>
+        </div>
+      </div>
+
+      <div class="cbt-container">
+        <div class="q-box">
+          <div class="eyebrow" id="qPositionLabel">Question 1 of 10</div>
+          <h4 id="qTopicLabel" style="margin:4px 0 16px;color:var(--muted)">Topic: Computer Science</h4>
+          <div id="qContent" style="font-size:16px;line-height:1.6;margin-bottom:20px">Loading question...</div>
+          <div class="field">
+            <label>Your Answer</label>
+            <textarea id="answerInput" placeholder="Type your answer here..."></textarea>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:16px">
+            <button class="btn" onclick="navQuestion(-1)">← Previous</button>
+            <button class="btn primary" onclick="saveAnswer()">Save & Next →</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="eyebrow">Question Navigator</div>
+          <div id="qNavGrid" class="q-nav-grid"></div>
+        </div>
+      </div>
+    </div>`;
+
+  $('startForm').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const headers = {
+        'X-Exam-Centre-ID': $('cbtCentreId').value,
+        'X-Exam-Device-ID': $('cbtDeviceId').value,
+        'X-Exam-Device-Token': $('cbtDeviceToken').value,
+      };
+      const d = await api('/exams/' + $('cbtExamId').value + '/start', { method: 'POST', headers });
+      state.examSession = { ...d, centreId: $('cbtCentreId').value, deviceId: $('cbtDeviceId').value, deviceToken: $('cbtDeviceToken').value };
+      state.totalQuestions = d.question_count;
+      $('cbtExamArea').classList.remove('hidden');
+      buildQuestionNavGrid();
+      await loadQuestionPosition(1);
+      toast('CBT Session started');
+    } catch (err) { toast(err.message); }
+  };
+}
+
+async function runPaperValidation() {
+  const eid = $('examIdInput').value;
+  try {
+    const res = await api('/exams/' + eid + '/validate');
+    let html = `<strong>Validation Status: ${badgeStatus(res.status)}</strong><br><br>`;
+    html += `Syllabus Coverage: ${badgeStatus(res.syllabus_coverage)}<br>`;
+    html += `Difficulty Balance: ${badgeStatus(res.difficulty_balance)}<br>`;
+    html += `Duplicate Detection: ${badgeStatus(res.duplicate_detection)}<br>`;
+    html += `Exposed Questions: ${badgeStatus(res.exposed_questions)}<br>`;
+    html += `Approval Status: ${badgeStatus(res.approval_status)}<br><br>`;
+    html += `<strong>Details:</strong><br>${res.details.map(d => `• ${esc(d)}`).join('<br>')}`;
+    $('validationResult').innerHTML = html;
+    $('validationResult').classList.remove('hidden');
+  } catch (e) { toast(e.message); }
+}
+
+async function approveRelease() {
+  const eid = $('examIdInput').value;
+  try {
+    await api('/exams/' + eid + '/release/approve', { method: 'POST' });
+    toast('Officer approval recorded');
+  } catch (e) { toast(e.message); }
+}
+
+async function releaseExam() {
+  const eid = $('examIdInput').value;
+  try {
+    const res = await api('/exams/' + eid + '/release', { method: 'POST' });
+    toast('Exam status: ' + res.status);
+  } catch (e) { toast(e.message); }
+}
+
+function buildQuestionNavGrid() {
+  let html = '';
+  for (let i = 1; i <= state.totalQuestions; i++) {
+    const isAnswered = !!state.answers[i];
+    html += `<button class="q-nav-btn ${i === state.currentQuestionPos ? 'active' : ''} ${isAnswered ? 'answered' : ''}" onclick="loadQuestionPosition(${i})">${i}</button>`;
+  }
+  $('qNavGrid').innerHTML = html;
+}
+
+async function loadQuestionPosition(pos) {
+  if (!state.examSession) return;
+  state.currentQuestionPos = pos;
+  buildQuestionNavGrid();
+  $('qPositionLabel').textContent = `Question ${pos} of ${state.totalQuestions}`;
+  $('qContent').textContent = 'Fetching question securely...';
+  try {
+    const headers = {
+      'X-Exam-Session-Token': state.examSession.session_token,
+      'X-Exam-Device-ID': state.examSession.deviceId,
+      'X-Exam-Device-Token': state.examSession.deviceToken,
+      'X-Exam-Centre-ID': state.examSession.centreId,
+    };
+    const q = await api('/exams/' + state.examSession.exam_id + '/questions/' + pos, { headers });
+    state.currentQuestionId = q.question_id;
+    $('qTopicLabel').textContent = `Topic: ${q.topic} (${q.difficulty})`;
+    $('qContent').textContent = q.content;
+    $('answerInput').value = state.answers[pos] || '';
+  } catch (e) { toast(e.message); }
+}
+
+async function saveAnswer() {
+  if (!state.examSession || !state.currentQuestionId) return;
+  const ans = $('answerInput').value;
+  if (!ans.trim()) return navQuestion(1);
+  const nonce = 'NONCE_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+  try {
+    const headers = {
+      'X-Exam-Session-Token': state.examSession.session_token,
+      'X-Exam-Device-ID': state.examSession.deviceId,
+      'X-Exam-Device-Token': state.examSession.deviceToken,
+      'X-Exam-Centre-ID': state.examSession.centreId,
+    };
+    await api('/exams/' + state.examSession.exam_id + '/answers', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ question_id: state.currentQuestionId, answer: ans, client_nonce: nonce })
+    });
+    state.answers[state.currentQuestionPos] = ans;
+    toast('Answer saved safely');
+    navQuestion(1);
+  } catch (e) { toast(e.message); }
+}
+
+function navQuestion(dir) {
+  const nextPos = state.currentQuestionPos + dir;
+  if (nextPos >= 1 && nextPos <= state.totalQuestions) {
+    loadQuestionPosition(nextPos);
+  }
+}
+
+async function finishCBT() {
+  if (!state.examSession || !confirm('Are you sure you want to submit your examination?')) return;
+  try {
+    const headers = {
+      'X-Exam-Session-Token': state.examSession.session_token,
+      'X-Exam-Device-ID': state.examSession.deviceId,
+      'X-Exam-Device-Token': state.examSession.deviceToken,
+      'X-Exam-Centre-ID': state.examSession.centreId,
+    };
+    await api('/exams/' + state.examSession.exam_id + '/finish', { method: 'POST', headers });
+    toast('Exam submitted successfully!');
+    $('cbtExamArea').classList.add('hidden');
+    state.examSession = null;
+  } catch (e) { toast(e.message); }
+}
+
+/* 6. SECURITY CENTRE */
+async function renderSecurity() {
+  const root = $('viewSecurity');
+  const [alerts, chain, exposure] = await Promise.all([
+    api('/security/alerts'),
+    api('/blockchain/verify'),
+    api('/exams/exposure/questions')
+  ]);
+  root.innerHTML = `
+    <div class="grid cards">
+      <div class="card"><div class="eyebrow">Blockchain Ledger</div><div class="metric" style="color:${chain.valid?'var(--good)':'var(--bad)'}">${chain.valid?'VALID':'INVALID'}</div><div class="small">${chain.blocks ?? 0} total blocks</div></div>
+      <div class="card"><div class="eyebrow">Open Alerts</div><div class="metric">${alerts.filter(a => a.status === 'OPEN').length}</div><div class="small">Risk Engine alerts</div></div>
+      <div class="card"><div class="eyebrow">Exposed Items</div><div class="metric">${exposure.filter(q => q.exposure_count > 0).length}</div><div class="small">Questions exposed</div></div>
+    </div>
+    <div class="grid two" style="margin-top:20px">
+      <div class="card">
+        <div class="section-title"><h3>Security Risk Alerts</h3></div>
+        ${alerts.length ? `<table><thead><tr><th>Alert</th><th>Risk Score</th><th>Severity</th><th>Status</th><th>Action</th></tr></thead><tbody>${alerts.map(a => `
+          <tr>
+            <td><b>#${a.id}</b></td>
+            <td><b>${a.risk_score}</b></td>
+            <td>${badgeStatus(a.severity)}</td>
+            <td>${badgeStatus(a.status)}</td>
+            <td>${a.status === 'OPEN' ? `<button class="btn" onclick="resolveAlert(${a.id})">Resolve</button>` : '—'}</td>
+          </tr>`).join('')}</tbody></table>` : '<div class="empty">No security alerts logged.</div>'}
+      </div>
+      <div class="card">
+        <div class="section-title"><h3>Blockchain Event Explorer</h3></div>
+        <button class="btn primary" onclick="viewBlockchainChain()">View Immutable Chain</button>
+      </div>
+    </div>`;
+}
+
+async function resolveAlert(id) {
+  try {
+    await api('/security/alerts/' + id + '/resolve', { method: 'POST' });
+    toast('Alert resolved');
+    renderSecurity();
+  } catch (e) { toast(e.message); }
+}
+
+async function viewBlockchainChain() {
+  try {
+    const res = await api('/blockchain/chain');
+    const html = `<pre class="mono" style="background:var(--surface2);padding:14px;border-radius:12px;max-height:60vh;overflow:auto">${esc(JSON.stringify(res.chain, null, 2))}</pre>`;
+    openModal('Immutable Blockchain Ledger', html);
+  } catch (e) { toast(e.message); }
+}
+
+/* 7. IDENTITY & CENTRES */
+async function renderIdentity() {
+  const root = $('viewIdentity');
+  root.innerHTML = `
+    <div class="grid three">
+      <div class="card">
+        <div class="eyebrow">Centre</div>
+        <h3 style="margin:6px 0 14px">Register Centre</h3>
+        <form id="cform" class="form">
+          <input id="ccode" value="CTR-001" placeholder="Centre Code" required>
+          <input id="cname" value="Coimbatore Examination Centre" placeholder="Centre Name" required>
+          <button class="btn primary">Create Centre</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Device</div>
+        <h3 style="margin:6px 0 14px">Register CBT Device</h3>
+        <form id="dform" class="form">
+          <input id="dcid" type="number" value="1" placeholder="Centre ID" required>
+          <input id="dcode" value="DEV-0001" placeholder="Device Code" required>
+          <button class="btn primary">Bind Device</button>
+        </form>
+        <div id="deviceTokenBox" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Candidate</div>
+        <h3 style="margin:6px 0 14px">Verify Identity</h3>
+        <form id="vform" class="form">
+          <input id="veid" type="number" value="1" placeholder="Exam ID" required>
+          <input id="vcid" type="number" value="5" placeholder="Candidate User ID" required>
+          <button class="btn good">Mark Verified</button>
+        </form>
+      </div>
+    </div>`;
+
+  $('cform').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const d = await api('/identity/centres', { method: 'POST', body: JSON.stringify({ code: $('ccode').value, name: $('cname').value }) });
+      toast('Centre created: ID ' + d.id);
+    } catch (err) { toast(err.message); }
+  };
+  $('dform').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const d = await api('/identity/centres/' + $('dcid').value + '/devices', { method: 'POST', body: JSON.stringify({ device_code: $('dcode').value }) });
+      $('deviceTokenBox').innerHTML = `<div class="notice">Token issued:<br><span class="mono">${esc(d.device_token)}</span></div>`;
+      toast('Device registered');
+    } catch (err) { toast(err.message); }
+  };
+  $('vform').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      await api('/identity/exams/' + $('veid').value + '/candidates/' + $('vcid').value + '/verify', { method: 'POST' });
+      toast('Candidate identity verified');
+    } catch (err) { toast(err.message); }
+  };
+}
+
+/* 8. LEAK INVESTIGATION MODULE */
+function renderInvestigation() {
+  const root = $('viewInvestigation');
+  root.innerHTML = `
+    <div class="grid two">
+      <div class="card">
+        <div class="section-title"><h3>Leak Investigation Workstation</h3><span class="status purple">SHA-256 + Similarity Match</span></div>
+        <form id="leakForm" class="form">
+          <div class="field"><label>Suspected Leaked Question / Document Text</label><textarea id="leakText" placeholder="Paste extracted or leaked text here..." required></textarea></div>
+          <div class="field"><label>Optional Document Hash (SHA-256)</label><input id="leakHash" placeholder="Exact hash match if available"></div>
+          <button class="btn primary" type="submit">Analyze & Trace Leak Origin</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Investigation Procedure</h3>
+        <p class="small" style="line-height:1.7">The analysis engine compares exact cryptographic hashes and performs normalized token similarity matching across all encrypted questions to reveal creator, reviewer, exam assignments, delivered sessions, security events, and audit logs.</p>
+      </div>
+    </div>
+    <div id="leakResults" class="card hidden" style="margin-top:20px"></div>`;
+
+  $('leakForm').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const res = await api('/investigation/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ suspected_text: $('leakText').value, document_hash: $('leakHash').value || null })
+      });
+      let html = `<h3>Leak Analysis Results</h3>`;
+      if (res.matches_found && res.top_match) {
+        const m = res.top_match;
+        html += `
+          <div class="notice" style="background:var(--bad-bg);border-color:rgba(239,68,68,0.4);color:#fca5a5;margin-bottom:16px">
+            <strong>Match Found! Confidence: ${(m.confidence * 100).toFixed(1)}%</strong><br>
+            Question ID: <b>Q${m.question_id}</b> · Subject: ${esc(m.subject)} · Topic: ${esc(m.topic)}<br>
+            Creator: <b>${esc(m.created_by?.name)}</b> (${esc(m.created_by?.email)})<br>
+            Reviewer: <b>${esc(m.reviewed_by?.name || 'N/A')}</b><br>
+            Delivered Sessions Count: <b>${m.sessions_received_count}</b>
+          </div>
+          <button class="btn primary" onclick="viewLifecycle(${m.question_id})">Open Complete Visual Timeline</button>`;
+      } else {
+        html += `<div class="empty">No matching questions found for the suspected text.</div>`;
+      }
+      $('leakResults').innerHTML = html;
+      $('leakResults').classList.remove('hidden');
+    } catch (err) { toast(err.message); }
+  };
+}
+
+// Initial session check
+if (state.token) {
+  const p = jwtPayload(state.token);
+  state.role = p.role; state.userId = p.sub;
+  if (state.role) {
+    $('loginScreen').classList.add('hidden'); $('app').classList.remove('hidden');
+    $('roleBadge').textContent = state.role; $('avatar').textContent = state.role[0];
+    buildNav();
+  } else localStorage.removeItem('secureExamToken');
+}
+</script>
+</body>
+</html>
