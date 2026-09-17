@@ -21,16 +21,30 @@ pip install -r requirements.txt
 python -m app.seed
 ```
 
-### 3. Run Application Server
+### 3. Run Backend API Server
 ```bash
+# From backend directory
 python -m uvicorn app.main:app --reload
 ```
+- **API Server**: `http://127.0.0.1:8000`
+- **Interactive Swagger Docs**: `http://127.0.0.1:8000/docs`
 
-- **Web Dashboard & UI**: `http://127.0.0.1:8000/ui`
-- **Interactive Swagger API Docs**: `http://127.0.0.1:8000/docs`
-
-### 4. Run Test Suite
+### 4. Run Frontend React UI
 ```bash
+# Navigate to frontend directory
+cd ../frontend
+
+# Install dependencies (if not already installed)
+npm install
+
+# Start development server
+npm run dev
+```
+- **React Frontend App**: `http://localhost:5173`
+
+### 5. Run Test Suite
+```bash
+# From backend directory
 python -m pytest tests/ -v
 ```
 
@@ -40,11 +54,12 @@ python -m pytest tests/ -v
 
 | Role | Email | Password | Capabilities |
 |------|-------|----------|--------------|
-| **ADMIN** | `admin@example.com` | `password123` | Security Dashboard, Release Exam, Leak Investigation, Audit |
-| **SETTER** | `setter_a@example.com` | `password123` | Author & encrypt individual questions |
-| **REVIEWER** | `reviewer_a@example.com` | `password123` | Review & approve assigned questions |
-| **EXAM_OFFICER** | `officer_a@example.com` | `password123` | Pre-Exam AI Validation, Dual-Officer Release Approval |
-| **CANDIDATE** | `candidate_a@example.com` | `password123` | Device-bound Candidate CBT Exam Session |
+| **ADMIN** | `admin@secureexam.gov` | `Admin@123` | Full System Management, Centres, Devices, Audit |
+| **SETTER** | `setter@secureexam.gov` | `Setter@123` | Author & AES-256 Envelope Encrypt Questions |
+| **REVIEWER** | `reviewer@secureexam.gov` | `Reviewer@123` | Cryptographic Approval & Review Queue |
+| **EXAM_OFFICER** | `officer@secureexam.gov` | `Officer@123` | Pre-Exam AI Validation, Dual Release Approvals |
+| **CANDIDATE** | `candidate@secureexam.gov` | `Candidate@123` | Device-bound Secure CBT Examination |
+| **SECURITY_AUDITOR** | `auditor@secureexam.gov` | `Auditor@123` | Real-time Risk Scoring, Anomaly Monitoring, Simhash Leak Tracing |
 
 ---
 
